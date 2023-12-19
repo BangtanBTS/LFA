@@ -1,0 +1,206 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int MAXA = 26;
+
+const char Destino = 'F';
+const bool Interface = 1;
+vector<vector<pair<int, int>>> G;
+
+class Automaton {
+private:
+  char inicio;
+  set<char> NT, T;
+  map<pair<char, char>, set<char>> transicoes;
+public:
+  Automaton(char entrada) : inicio(entrada), NT({Destino}) {} //construtor 
+  //O construtor recebe um caractere 'entrada' como parametro.
+  //Inicializa o membro 'inicio' da classe com o valor passado como 'entrada'.
+
+  /*O metodo emplace eh uma funcao em C++ que eh utilizada para construir um objeto 
+  diretamente no local especificado sem a necessidade de copias desnecessarias.*/
+
+  void add_nao_terminal(char S) { //A, B, C
+    NT.emplace(S);
+  }
+  void add_terminal(char S) { //a, b, c
+    T.emplace(S);
+  }
+  void add_transicoes(char start, char finish, char letter) {
+    transicoes[{start, finish}].emplace(letter);
+  }
+  void imprimir() {
+    map<pair<char, char>, set<char>> display;
+    cout << "Estado Inicial: " << inicio << '\n';
+    cout << "Estado Final: " << Destino << '\n';
+    for(auto [k, c] : transicoes) {
+    /*Este eh um loop for baseado em intervalo (range-based for loop) 
+    que percorre as entradas do mapa transicoes. 
+    Cada entrada eh um par onde k eh a chave (um par de caracteres) e 
+    c eh o valor (um conjunto de caracteres).*/
+      for(auto i : c) {
+      /*loop for baseado em intervalo, utilizado para percorrer os 
+      elementos do conjunto c associado a chave k no mapa transicoes.*/
+        display[{k.first, i}].emplace(k.second);
+        /*k.first -> estado de inicio.
+        i -> caracter de transicao.
+        emplace(k.second)-> Adiciona o estado de destino ao conjunto 
+        associado a nova chave {k.first, i} no mapa display.*/
+        
+      }
+    }
+    for(auto i : NT) { // i -> nao terminal
+      for(auto j : T) { // j -> terminal
+        string sep = "";
+        cout << "[" << i << "]" << "[" << j << "]" << ": {";
+        for(auto k : display[{i, j}]) {
+          cout << sep << k;
+          if(sep == "") sep = ",";
+        }
+        cout << "}\n";
+      }
+    } 
+  }
+  vector<vector<pair<int, int>>> create_grafo() {
+    vector<vector<pair<int, int>>> GS(MAXA);
+    for(auto [k, c] : transicoes) {
+      for(auto i : c) {
+        GS[k.first - 'A'].emplace_back(k.second - 'A', i - 'a');
+      }
+    }
+    return GS;
+  }
+};
+bool dfs(int v, int i, string const& word) { //DFS - BUSCA EM PROFUNDIDADE
+  if(i == (int)word.size() && v + 'A' == Destino) return 1;
+  bool possible = 0;
+  for(auto [k, v] : G[v]) {
+    char c = v + 'a';
+    if(word[i] == c) {
+      possible |= dfs(k, i + 1, word);
+    }
+  }
+  return possible;
+}
+int main() {
+  // Descricao sobre a entrada {{{
+  //   A entrada deve conter apenas gramaticas cujas producoes sao dos tipos:
+  //   A -> a ou A -> aA, onde 'A' representa um nao terminal qualquer e 'a' representa um terminal qualquer
+  //   A entrada nao podera conter EPS (vazio).
+  //   Cada producao deve possuir apenas uma das duas opcoes e deve ser escrita separadamente
+  //   O estado final para aceitacao esta definido como 'F', mas pode ser mudado na linha 5
+  // }}}
+
+  cout << "Digite a quantidade de nao terminais" << '\n';
+  int A; 
+  cin >> A;
+  cout << "Digite os nao terminais" << '\n';
+  vector<char> nao_terminais(A);
+  for(auto &i : nao_terminais) cin >> i;
+
+  cout << "Digite a quantidade de terminais" << '\n';
+  int B; 
+  cin >> B;
+  cout << "Digite os terminais" << '\n';
+  vector<char> terminais(B);
+  for(auto &i : terminais) cin >> i;
+  
+  cout << "Digite a quantidade de producoes" << '\n';
+  int C, K = 0; 
+  cin >> C;
+  cout << "Digite as producoes" << '\n';
+  cout << "escolha o tipo de transicao" << '\n';
+  cout << "1 - A -> aA (terminal seguido de nao terminal)" << '\n';
+  cout << "2 - A -> a (terminal)" << '\n';
+  vector<tuple<char, char, char>> transicoes(C);
+  for(auto &[a, b, c] : transicoes) {
+    K++;
+    int type; 
+    cin >> type;
+    if(type == 1) {
+      cout << "Digite A -> bC (digite os valores de A, b e C)" << '\n';
+      char x, y, z; cin >> x >> y >> z;
+      a = x, b = y, c = z;
+    } else {
+      cout << "Digite A -> b (digite os valores de A e b)" << '\n';
+      char x, y; 
+      cin >> x >> y;
+      a = x, b = y, c = Destino;
+    }
+    if(Interface == 1) {
+      this_thread::sleep_for(chrono::seconds(1));
+      /*this_thread::sleep_for(chrono::seconds(1)): 
+      Este comando faz com que o programa pause por 1 segundo. */
+      system("cls");
+      //system("cls"): Este comando eh usado para limpar a tela do console.
+      if(K != C) {
+        cout << "escolha o tipo de transicao" << '\n';
+        cout << "1 - A -> aA (terminal seguido de nao terminal)" << '\n';
+        cout << "2 - A -> a (terminal)" << '\n';
+      }
+    }
+  }
+
+  cout << "Digite o estado inicial" << '\n';
+  char start; cin >> start;
+
+  system("cls");
+
+  Automaton FA(start);
+
+  for(auto i : nao_terminais) {
+    FA.add_nao_terminal(i);
+  }
+
+  for(auto i : terminais) {
+    FA.add_terminal(i);
+  }
+
+  for(auto [a, b, c] : transicoes) {
+    FA.add_transicoes(a, c, b);
+  }
+  
+  FA.imprimir();
+
+  G = FA.create_grafo();
+
+  cout << "Digite quantas palavras deseja processar" << '\n';
+  int T; 
+  cin >> T;
+  
+  for(int i = 0; i < T; i++) {
+    cout << "Digite a palavra que deseja processar" << '\n';
+    string palavra; 
+    cin >> palavra;
+    
+    bool possivel = dfs(0, 0, palavra);
+
+    if(possivel == 1) cout << "Palavra ACEITA" << '\n';
+    else cout << "Palavra NAO ACEITA" << '\n';
+  }
+}
+// Test cases ->
+// 2
+// A B
+// 2
+// a b
+// 4
+// 1 A a B
+// 2 A a
+// 1 B b A
+// 2 B b
+// A
+// ---------------------------
+// 2
+// A B
+// 3
+// a b c
+// 6
+// 1 A c A
+// 1 A b A
+// 1 A a B
+// 1 B c A
+// 1 B b B
+// 2 B a
+// A
+
+//crtl f ctrl h
